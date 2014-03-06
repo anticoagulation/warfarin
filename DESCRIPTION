@@ -15,4 +15,4 @@ Imports:
     reshape2,
     grid
 Collate:
-    'inr.functions.R'
+    'inrfunctions.R'
