@@ -53,6 +53,11 @@ $( "#dialog" ).dialog();
         $("#submitbutton").attr("disabled", "disabled");
         //read the values
        	temp = editor.getSession().getValue();
+		//The replacements below are not required on a local server, but are at https://public.opencpu.org/ocpu/github/
+		temp = temp.replace(/\r?\n/g, '')
+		temp = temp.replace(/\s+$/g, '')
+		temp = temp.replace(/$\s+/g, '')
+		temp = temp.replace(/,$/g, '')
         //perform the request
         var req = opencpu.r_fun_json("launch", {
 		  lowrange: $("#lowrange").val(),
@@ -76,6 +81,11 @@ $( "#dialog" ).dialog();
 		$("#lowrange").val("2.0");
 		$("#highrange").val("3.0");
 		editor.setValue("1, 7, 2,\n1, 13, 2.5,\n1, 18, 3.1,\n1, 47, 2.8,",1);
+		}
+	if($(this).val()=="ex_1b") {
+		$("#lowrange").val("2.0");
+		$("#highrange").val("3.0");
+		editor.setValue("1, 7, 2,\n1, 13, 2.5,\n2, 7, 2,\n1, 18, 3.1,\n2, 13, 2.5,\n2, 18, 3.1,\n1, 47, 2.8,\n2, 47, 2.8,",1);
 		}
   });
 
@@ -277,7 +287,8 @@ Separate columns with commas. <a id="addcommas" href="#">Click here</a> to add c
 	          <form name="form2" action="#" style="width:350px;">
           <fieldset style="border: 3px solid #6DC6E7; background-color: #FFFFFF;width:350px;height:650px;">
 		  <legend style="font-weight:bold">Example analyses</legend>
-			<div><input type="radio" name="example" class="example" value="ex_1a" id="ex_1a" /><label for="ex_1a">Data set 1</label></div>
+			<div><input type="radio" name="example" class="example" value="ex_1a" id="ex_1a" /><label for="ex_1a">Data set 1 (single patient)</label></div>
+			<div><input type="radio" name="example" class="example" value="ex_1b" id="ex_1b" /><label for="ex_1b">Data set 1 (multiple patients) (not implemented)</label></div>
 	  </fieldset>
 </form>
 

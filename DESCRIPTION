@@ -1,0 +1,18 @@
+Package: warfarin
+Type: OpenCPU Application
+Title: Time in therapeutic range at OpenCPU
+Version: 0.1
+Date: 2014-03-02
+Author: Robert Badgett <rbadgett@kumc.edu>, Robert Badgett <rbadgett@kumc.edu>
+Maintainer: Robert Badgett <rbadgett@kumc.edu>, Robert Badgett <rbadgett@kumc.edu>
+Description: OpenCPU application for calculating the time in therapeutic range for warfarin
+License: GPL
+Imports:
+    ggplot2,
+    httr,
+    RJSONIO,
+    stringr,
+    reshape2,
+    grid
+Collate:
+    'ttr.R'

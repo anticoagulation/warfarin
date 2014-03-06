@@ -245,3 +245,28 @@ calc.sigma <- function(inr.list)
     sigma <- sqrt(temp/(num - 1))
     return(replace(sigma,sigma==0 | sigma==Inf,NA))
 }
+
+# function launch
+# 
+# Accept input from web form and call calc.tir 
+launch <- function(content, lowrange, highrange) {
+temp <- content
+# http://stat.ethz.ch/R-manual/R-devel/library/base/html/regex.html
+#temp <- gsub('\n', '', fixed = TRUE, temp, perl = TRUE)
+#temp <- gsub("\\s+$", "", temp, perl = TRUE) #Removing trailing whitespace
+temp <- gsub(",+$", "", temp, perl = TRUE) #Remove trailing comma if accidentally added by user online at webform
+temp <- gsub("\t", ' ', fixed = TRUE, temp)
+temp <- gsub(',', '","', fixed = TRUE, temp)
+temp <- paste('"',temp,'"',sep = '')
+temp <- paste('Mymatrix <- matrix(c(',temp,'), ncol=3, byrow=TRUE, dimnames = list(NULL, c("id","day", "inr")))',sep = '')
+x <- eval(parse(file = "", n = NULL, text = temp))
+inr.list <- data.frame (x)
+inr.list$id  <- as.numeric(as.character(str_trim(inr.list$id)))
+inr.list$day <- as.numeric(as.character(str_trim(inr.list$day)))
+inr.list$inr <- as.numeric(as.character(str_trim(inr.list$inr)))
+lowrange <- as.numeric(as.character(str_trim(lowrange)))
+highrange <- as.numeric(as.character(str_trim(highrange)))
+result <- calc.tir (inr.list, lowrange, highrange)
+msg <- paste("Time in therapeutic range: ", sprintf("%.1f",result$time.in/result$tir), "%", sep="")
+list(message = msg)
+}
