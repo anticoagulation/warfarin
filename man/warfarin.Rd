@@ -8,4 +8,3 @@ This package calculates the time in therapeutic range for warfarin.
 
 \author{
 }
-}
