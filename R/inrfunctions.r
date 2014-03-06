@@ -266,6 +266,7 @@ inr.list$inr <- as.numeric(as.character(str_trim(inr.list$inr)))
 lowrange <- as.numeric(as.character(str_trim(lowrange)))
 highrange <- as.numeric(as.character(str_trim(highrange)))
 result <- calc.tir (inr.list, lowrange, highrange)
-msg <- paste("Time in therapeutic range: ", sprintf("%.1f",result$time.in/result$tir), "%", sep="")
+msg <- paste("<div>Time in therapeutic range: ", sprintf("%.1f",100*result$tir), "%</div>", sep="")
+msg <- paste(msg,"<div>Total number of days without gaps: ", sprintf("%.1f",result$time.nogaps), "</div>", sep="")
 list(message = msg)
 }
