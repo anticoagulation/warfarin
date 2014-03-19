@@ -68,10 +68,6 @@ split.date <- function(x,ymd=FALSE,return.year=FALSE,return.month=FALSE,return.d
     return(sapply(x,splitone,ymd=ymd,return.year=return.year,return.month=return.month,return.day=return.day))
 }
 
-
-
-
-
 # function time.in.range
 # 
 # Calculate TTR using linear interpolation, given the start and end times (t1, t2) and the 
@@ -178,49 +174,72 @@ time.in.range <- function(t1,t2,y1,y2,high,low)
 
 calc.tir <- function(inr.list,lowrange=2.0,highrange=3.0)
 {
-    if (length(inr.list$inr)==1) return(list(total.time=0,gaps=0,time.nogaps=0,time.in=0,time.above=0,time.below=0,tir=NA,tir.above=NA,tir.below=NA,auc.below=NA,auc.above=NA,auc2.below=NA,auc2.above=NA))
-    tempnum <- length(inr.list$inr)
-    temp.below <- sum(inr.list$inr < lowrange)
-    temp.in <- sum(inr.list$inr <= highrange & inr.list$inr >= lowrange)
-    temp.above <- sum(inr.list$inr > highrange)
-    temp.gap <- 0
-    temp.auca <- 0
-    temp.aucb <- 0
-    temp.auc2a <- 0
-    temp.auc2b <- 0
-
-    for (j in 2:tempnum)
+    idlist <- unique(inr.list$id)
+    numsub <- length(idlist)
+    resmat <- matrix(NA,numsub,13)
+    
+	total.time.in = 0
+	total.time.nogaps = 0
+	
+    for (i in 1:numsub)
     {
-        lastdate <- inr.list$day[j] - inr.list$day[j-1]
-        if (lastdate > 56 | lastdate==0 | is.na(inr.list$inr[j-1]) | is.na(inr.list$inr[j])) temp.gap <- temp.gap + (lastdate-1)
-        else
-        {
-            tempres <- time.in.range(0,lastdate,inr.list$inr[j-1],inr.list$inr[j],highrange,lowrange)
-            temp.below <- temp.below + round(tempres[1],1)
-            temp.in <- temp.in + round(tempres[2],1)
-            temp.above <- temp.above + round(tempres[3],1)
-            temp.aucb <- temp.aucb + round(tempres[4],1)
-            temp.auca <- temp.auca + round(tempres[5],1)
-            temp.auc2b <- temp.auc2b + round(tempres[6],1)
-            temp.auc2a <- temp.auc2a + round(tempres[7],1)
-        }
-    }
-    total.time <- temp.below+temp.in+temp.above+temp.gap
-    time.nogaps <- total.time-temp.gap
+        this.dat <- inr.list[inr.list$id == idlist[i],]
+        if (length(this.dat$inr)==1) return(list(total.time=0,gaps=0,time.nogaps=0,time.in=0,time.above=0,time.below=0,tir=NA,tir.above=NA,tir.below=NA,auc.below=NA,auc.above=NA,auc2.below=NA,auc2.above=NA))
+        tempnum <- length(this.dat$inr)
+        temp.below <- sum(this.dat$inr < lowrange)
+        temp.in <- sum(this.dat$inr <= highrange & this.dat$inr >= lowrange)
+        temp.above <- sum(this.dat$inr > highrange)
+        temp.gap <- 0
+        temp.auca <- 0
+        temp.aucb <- 0
+        temp.auc2a <- 0
+        temp.auc2b <- 0
 
-    return(list(total.time=total.time,
-                gaps=temp.gap,
-                time.nogaps=time.nogaps,
-                time.below=temp.below,
-                time.in=temp.in,
-                time.above=temp.above,
-                tir=round(temp.in/time.nogaps,3),
-                tir.below=round(temp.below/time.nogaps,3),
-                tir.above=round(temp.above/time.nogaps,3),
-                auc.below=temp.aucb,
-                auc.above=temp.auca,
-                auc2.below=temp.auc2b,
-                auc2.above=temp.auc2a))
+        for (j in 2:tempnum)
+        {
+            lastdate <- this.dat$day[j] - this.dat$day[j-1]
+            if (lastdate > 56 | lastdate==0 | is.na(this.dat$inr[j-1]) | is.na(this.dat$inr[j])) temp.gap <- temp.gap + (lastdate-1)
+            else
+            {
+                tempres <- time.in.range(0,lastdate,this.dat$inr[j-1],this.dat$inr[j],highrange,lowrange)
+                temp.below <- temp.below + round(tempres[1],1)
+                temp.in <- temp.in + round(tempres[2],1)
+                temp.above <- temp.above + round(tempres[3],1)
+                temp.aucb <- temp.aucb + round(tempres[4],1)
+                temp.auca <- temp.auca + round(tempres[5],1)
+                temp.auc2b <- temp.auc2b + round(tempres[6],1)
+                temp.auc2a <- temp.auc2a + round(tempres[7],1)
+            }
+        }
+        total.time <- temp.below+temp.in+temp.above+temp.gap
+        time.nogaps <- total.time-temp.gap
+        resmat[i,] <- c(total.time,temp.gap,time.nogaps,temp.below,temp.in,temp.above,round(temp.in/time.nogaps,3),
+                         round(temp.below/time.nogaps,3),round(temp.above/time.nogaps,3),auc.below=temp.aucb,temp.auca,
+                         temp.auc2b,temp.auc2a)
+		total.time.in = total.time.in + temp.in
+		total.time.nogaps = total.time.nogaps + time.nogaps
+    }
+    
+	return(list(tir=round(total.time.in / total.time.nogaps,3),total.time.nogaps = total.time.nogaps, number.subjects = numsub))
+	
+	#resmat <- data.frame(resmat)
+    #names(resmat) <- c("total.time","gaps","time.nogaps","time.below","time.in","time.above","tir","tir.below","tir.above","auc.below","auc.above","auc2.below","auc2.above")
+    #return(resmat)
+
+#    return(list(total.time=total.time,
+#                gaps=temp.gap,
+#                time.nogaps=time.nogaps,
+#                time.below=temp.below,
+#                time.in=temp.in,
+#                time.above=temp.above,
+#                tir=round(temp.in/time.nogaps,3),
+#                tir.below=round(temp.below/time.nogaps,3),
+#                tir.above=round(temp.above/time.nogaps,3),
+#                auc.below=temp.aucb,
+#                auc.above=temp.auca,
+#                auc2.below=temp.auc2b,
+#                auc2.above=temp.auc2a))
+
 }
 
 
@@ -267,6 +286,8 @@ lowrange <- as.numeric(as.character(str_trim(lowrange)))
 highrange <- as.numeric(as.character(str_trim(highrange)))
 result <- calc.tir (inr.list, lowrange, highrange)
 msg <- paste("<div>Time in therapeutic range: ", sprintf("%.1f",100*result$tir), "%</div>", sep="")
-msg <- paste(msg,"<div>Total number of days without gaps: ", sprintf("%.1f",result$time.nogaps), "</div>", sep="")
+msg <- paste(msg,"<div>Total number of days without gaps: ", sprintf("%.1f",result$total.time.nogaps), "</div>", sep="")
+msg <- paste(msg,"<div>Total number of subjects: ", result$number.subjects, "</div>", sep="")
+
 list(message = msg)
 }
