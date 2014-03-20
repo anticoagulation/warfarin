@@ -174,17 +174,23 @@ time.in.range <- function(t1,t2,y1,y2,high,low)
 
 calc.tir <- function(inr.list,lowrange=2.0,highrange=3.0)
 {
+    inr.list <- inr.list[order(inr.list$id,inr.list$day),]
+
     idlist <- unique(inr.list$id)
     numsub <- length(idlist)
-    resmat <- matrix(NA,numsub,13)
-    
-	total.time.in = 0
+    resmat <- matrix(NA,numsub,14)
+
+	total.time.in = 0 		#Initialize variables to collect cumulative data across patients 03-19-2014
 	total.time.nogaps = 0
-	
+    
     for (i in 1:numsub)
     {
         this.dat <- inr.list[inr.list$id == idlist[i],]
-        if (length(this.dat$inr)==1) return(list(total.time=0,gaps=0,time.nogaps=0,time.in=0,time.above=0,time.below=0,tir=NA,tir.above=NA,tir.below=NA,auc.below=NA,auc.above=NA,auc2.below=NA,auc2.above=NA))
+        if (length(this.dat$inr)==1 | sum(is.na(this.dat$day)>0))
+        {
+            resmat[i,] <- c(idlist[i],0,0,0,0,0,0,NA,NA,NA,NA,NA,NA,NA)
+            next
+        }
         tempnum <- length(this.dat$inr)
         temp.below <- sum(this.dat$inr < lowrange)
         temp.in <- sum(this.dat$inr <= highrange & this.dat$inr >= lowrange)
@@ -213,17 +219,18 @@ calc.tir <- function(inr.list,lowrange=2.0,highrange=3.0)
         }
         total.time <- temp.below+temp.in+temp.above+temp.gap
         time.nogaps <- total.time-temp.gap
-        resmat[i,] <- c(total.time,temp.gap,time.nogaps,temp.below,temp.in,temp.above,round(temp.in/time.nogaps,3),
+        resmat[i,] <- c(idlist[i],total.time,temp.gap,time.nogaps,temp.below,temp.in,temp.above,round(temp.in/time.nogaps,3),
                          round(temp.below/time.nogaps,3),round(temp.above/time.nogaps,3),auc.below=temp.aucb,temp.auca,
                          temp.auc2b,temp.auc2a)
-		total.time.in = total.time.in + temp.in
+		total.time.in = total.time.in + temp.in				#Increment variables to collect cumulative data across patients 03-19-2014
 		total.time.nogaps = total.time.nogaps + time.nogaps
     }
     
+	#Return the totals of the variables that collected cumulative data across patients 03-19-2014
 	return(list(tir=round(total.time.in / total.time.nogaps,3),total.time.nogaps = total.time.nogaps, number.subjects = numsub))
-	
-	#resmat <- data.frame(resmat)
-    #names(resmat) <- c("total.time","gaps","time.nogaps","time.below","time.in","time.above","tir","tir.below","tir.above","auc.below","auc.above","auc2.below","auc2.above")
+
+    #resmat <- data.frame(resmat)
+    #names(resmat) <- c("id","total.time","gaps","time.nogaps","time.below","time.in","time.above","tir","tir.below","tir.above","auc.below","auc.above","auc2.below","auc2.above")
     #return(resmat)
 
 #    return(list(total.time=total.time,
