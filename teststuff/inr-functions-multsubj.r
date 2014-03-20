@@ -1,4 +1,3 @@
-
 ##########
 #
 # Functions to calculate various measures of INR control, including
