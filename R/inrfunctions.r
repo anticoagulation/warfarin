@@ -83,8 +83,8 @@ time.in.range <- function(t1,t2,y1,y2,high,low)
     int <- y1-m*(t1+1)                                                                               # intercept of line joining two points
     bh <- (int-high)                                                                                 # deviation from intercept to high limit
     bl <- (low-int)                                                                                  # deviation from intercept to low limit
-    if (t2-t1 <= 1) return(c(NA,NA,NA))                                                              # can not proceed
-
+    #if (t2-t1 <= 1) return(c(NA,NA,NA))                                                              # can not proceed
+    if (t2-t1 <= 1) return(c(0,0,0)) # Bob added in place of prior line on 4/16/2014
     if (m==0) {                                                                                      # separate case for slope zero
         if (y1 <= high & y1 >= low) t.in <- (t2-t1-1)
         else if (y1 > high) {
