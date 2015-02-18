@@ -1,3 +1,4 @@
+
 ##########
 #
 # Functions to calculate various measures of INR control, including
@@ -5,6 +6,9 @@
 # method of Rosendaal.
 #
 # Project started 2014-03-05 by Al Ozonoff, Boston Children's Hospital
+# 2014-03-17 made changes to accept multiple patient id's
+# 2014-05-02 further changes to accept missing or consecutive INR values
+# 2014-08-25 fixed problems calculating intercept, Cases 4/5/6/7 of calc.tir
 #
 # Some of this research was funded by VA grant XXX PI Adam Rose
 # 
@@ -68,83 +72,88 @@ split.date <- function(x,ymd=FALSE,return.year=FALSE,return.month=FALSE,return.d
     return(sapply(x,splitone,ymd=ymd,return.year=return.year,return.month=return.month,return.day=return.day))
 }
 
+
+
+
+
 # function time.in.range
 # 
 # Calculate TTR using linear interpolation, given the start and end times (t1, t2) and the 
 # respective INR values y1,y2.  The upper and lower limits are defined by parameters high 
 # and low respectively.
 
-time.in.range <- function(t1,t2,y1,y2,high,low)
+time.in.range <- function(t1,t2,y1,y2,high=3.0,low=2.0)
 {
     t.b <- 0; t.in <- 0; t.a <- 0                                                                    # initialize variables
     auc.b <- 0; auc.a <- 0
     auc2.b <- 0; auc2.a <- 0
     m <- (y2-y1)/(t2-t1-1)                                                                           # slope of line joining two points
-    int <- y1-m*(t1+1)                                                                               # intercept of line joining two points
+    int <- y1-m*t1                                                                                   # intercept of line joining two points
     bh <- (int-high)                                                                                 # deviation from intercept to high limit
     bl <- (low-int)                                                                                  # deviation from intercept to low limit
-    #if (t2-t1 <= 1) return(c(NA,NA,NA))                                                              # can not proceed
-    if (t2-t1 <= 1) return(c(0,0,0)) # Bob added in place of prior line on 4/16/2014
+    if (t2-t1 < 1) return(rep(NA,7))                                                                 # two INR values less than one day apart - something is wrong
+    if (t2-t1 == 1) return(rep(0,7))                                                                 # two INR values one day apart - recalculate
+
     if (m==0) {                                                                                      # separate case for slope zero
         if (y1 <= high & y1 >= low) t.in <- (t2-t1-1)
         else if (y1 > high) {
             t.a <- (t2-t1-1)
             auc.a <- (y1-high)*t.a
+            auc2.a <- (y1-high)^2*t.a
         }
         else if (y1 < low) {
             t.b <- (t2-t1-1)
             auc.b <- (low-y1)*t.b
+            auc2.b <- (low-y1)^2*t.b
         }
     }
     else {
-    tup <- ((high-int)/m)+t1+1                                                                       # calculate times of intersection with upper and lower bounds
-    tdown <- ((low-int)/m)+t1+1
+    tup <- ((high-int)/m)                                                                        # calculate times of intersection with upper and lower bounds
+    tdown <- ((low-int)/m)
 
     if (y1 > high & y2 > high) {                                                                     # Case 1: both y1 and y2 above range
         t.a <- (t2-t1-1)                                                                             # entire time above
         auc.a <- (mean(c(y1,y2))-high)*t.a                                                           # trapezoid above
-        auc2.a <- (m^2/3)*(t2^3-(t1+1)^3) + m*bh*(t2^2-(t1+1)^2) + bh^2*t.a                          # integrate quadratic over trapezoid
-    } 
+        auc2.a <- ((m^2/3)*t.a^3) + (y1-high)^2*t.a                                                  # integrate quadratic over trapezoid
+    }
     else if (y1 < low & y2 < low) {                                                                  # Case 2: both y1 and y2 below range
         t.b <- (t2-t1-1)                                                                             # entire time below
         auc.b <- (low-mean(c(y1,y2)))*t.b                                                            # trapezoid below
-        auc2.b <- (m^2/3)*(t2^3-(t1+1)^3) - m*bl*(t2^2-(t1+1)^2) + bl^2*t.b                          # integrate quadratic over trapezoid
+        auc2.b <- ((m^2/3)*t.b^3) + (low-y1)^2*t.b                                                   # integrate quadratic over trapezoid
     }
     else if ((y1 <= high & y2 <= high & y1 >= low & y2 >= low)) {                                    # Case 3: both y1 and y2 in range
         t.in <- (t2-t1-1)                                                                            # entire time in range
         }
     else if (y1 <= high & y1 >= low & y2 > high) {                                                   # Case 4: y1 in range, y2 above range
-        t.in <- tup-t1-1                                                                             # time in range
-        t.a <- t2-tup                                                                                # time above
-        auc.a <- (t2-tup)*(y2-high)/2                                                                # triangle above
-        auc2.a <- (t2-tup)^3*m^2/3                                                                   # integrate quadratic over triangle
+        t.in <- tup-t1                                                                               # time in range
+        t.a <- t2-tup-1                                                                              # time above
+        auc.a <- (t2-tup-1)*(y2-high)/2                                                              # triangle above
+        auc2.a <- (t2-tup-1)^3*m^2/3                                                                 # integrate quadratic over triangle
         }
     else if (y1 > high & y2 <= high & y2 >= low) {                                                   # Case 5: y1 above range, y2 in range
-        t.a <- tup-t1-1                                                                              # time above
-        t.in <- t2-tup                                                                               # time in range
-        auc.a <- (tup-t1-1)*(y1-high)/2                                                              # triangle above
-        auc2.a <- (tup-t1-1)^3*m^2/3                                                                 # integrate quadratic over triangle
+        t.in <- t2-tup-1                                                                             # time in range
+        t.a <- tup-t1                                                                                # time above
+        auc.a <- (tup-t1)*(y1-high)/2                                                              # triangle above
+        auc2.a <- (tup-t1)^3*m^2/3                                                                 # integrate quadratic over triangle
         }
     else if (y1 <= high & y1 >= low & y2 < low) {                                                    # Case 6: y1 in range, y2 below range
-        t.in <- tdown-t1-1                                                                           # time in range
-        t.b <- t2-tdown                                                                              # time below
-        auc.b <- (t2-tdown)*(low-y2)/2                                                               # triangle below
-        auc2.b <- (t2-tdown)^3*m^2/3                                                                 # integrate quadratic over triangle
+        t.b <- t2-tdown-1                                                                            # time below
+        auc.b <- (t2-tdown-1)*(low-y2)/2                                                             # triangle below
+        auc2.b <- (t2-tdown-1)^3*m^2/3                                                               # integrate quadratic over triangle
         }
     else if (y1 < low & y2 >= low & y2 <= high) {                                                    # Case 7: y1 below range, y2 in range
-        t.b <- tdown-t1-1                                                                            # time below
-        t.in <- t2-tdown                                                                             # time in range
-        auc.b <- (tdown-t1-1)*(low-y1)/2                                                             # triangle below
-        auc2.b <- (tdown-t1-1)^3*m^2/3                                                               # integrate quadratic over triangle
+        t.b <- tdown-t1                                                                              # time below
+        auc.b <- (tdown-t1)*(low-y1)/2                                                               # triangle below
+        auc2.b <- (tdown-t1)^3*m^2/3                                                                 # integrate quadratic over triangle
         }
     else if (y1 < low & y2 > high) {                                                                 # Case 8: y1 below range, y2 above range
-        t.b <- tdown-t1-1                                                                            # time below
+        t.b <- tdown-t1                                                                              # time below
         t.in <- tup-tdown                                                                            # time in range
-        t.a <- t2-tup                                                                                # time above
-        auc.a <- (t2-tup)*(y2-high)/2                                                                # triangle above
-        auc.b <- (tdown-t1-1)*(low-y1)/2                                                             # triangle below
-        auc2.a <- (t2-tup)^3*m^2/3                                                                   # integrate quadratic over triangle above
-        auc2.b <- (tdown-t1-1)^3*m^2/3                                                               # integrate quadratic over triangle below
+        t.a <- t2-tup-1                                                                              # time above
+        auc.a <- (t2-tup-1)*(y2-high)/2                                                              # triangle above
+        auc.b <- (tdown-t1)*(low-y1)/2                                                               # triangle below
+        auc2.a <- (t2-tup-1)^3*m^2/3                                                                 # integrate quadratic over triangle above
+        auc2.b <- (tdown-t1)^3*m^2/3                                                                 # integrate quadratic over triangle below
         }
     else if (y1 > high & y2 < low) {                                                                 # Case 9: y1 above range, y2 below range
         t.a <- tdown-t1-1                                                                            # time above
@@ -174,15 +183,16 @@ time.in.range <- function(t1,t2,y1,y2,high,low)
 
 calc.tir <- function(inr.list,lowrange=2.0,highrange=3.0)
 {
+    inr.list <- inr.list[!is.na(inr.list$inr),]
     inr.list <- inr.list[order(inr.list$id,inr.list$day),]
 
     idlist <- unique(inr.list$id)
     numsub <- length(idlist)
     resmat <- matrix(NA,numsub,14)
-
-	total.time.in = 0 		#Initialize variables to collect cumulative data across patients 03-19-2014
-	total.time.nogaps = 0
     
+	total.time.in = 0 		#Bob: initialized variables to collect cumulative data across patients 03-19-2014
+	total.time.nogaps = 0
+
     for (i in 1:numsub)
     {
         this.dat <- inr.list[inr.list$id == idlist[i],]
@@ -196,10 +206,10 @@ calc.tir <- function(inr.list,lowrange=2.0,highrange=3.0)
         temp.in <- sum(this.dat$inr <= highrange & this.dat$inr >= lowrange)
         temp.above <- sum(this.dat$inr > highrange)
         temp.gap <- 0
-        temp.auca <- 0
-        temp.aucb <- 0
-        temp.auc2a <- 0
-        temp.auc2b <- 0
+        temp.auca <- sum(as.numeric(this.dat$inr > highrange)*sapply((this.dat$inr-highrange),max,0))
+        temp.aucb <- sum(as.numeric(this.dat$inr < lowrange)*sapply((lowrange-this.dat$inr),max,0))
+        temp.auc2a <- sum(as.numeric(this.dat$inr > highrange)*(sapply((this.dat$inr-highrange),max,0))^2)
+        temp.auc2b <- sum(as.numeric(this.dat$inr < lowrange)*(sapply((lowrange-this.dat$inr),max,0))^2)
 
         for (j in 2:tempnum)
         {
@@ -222,15 +232,17 @@ calc.tir <- function(inr.list,lowrange=2.0,highrange=3.0)
         resmat[i,] <- c(idlist[i],total.time,temp.gap,time.nogaps,temp.below,temp.in,temp.above,round(temp.in/time.nogaps,3),
                          round(temp.below/time.nogaps,3),round(temp.above/time.nogaps,3),auc.below=temp.aucb,temp.auca,
                          temp.auc2b,temp.auc2a)
-		total.time.in = total.time.in + temp.in				#Increment variables to collect cumulative data across patients 03-19-2014
+		total.time.in = total.time.in + temp.in				#Bob added to increment variables to collect cumulative data across patients 03-19-2014
 		total.time.nogaps = total.time.nogaps + time.nogaps
     }
     
 	#Return the totals of the variables that collected cumulative data across patients 03-19-2014
 	return(list(tir=round(total.time.in / total.time.nogaps,3),total.time.nogaps = total.time.nogaps, number.subjects = numsub))
-
     #resmat <- data.frame(resmat)
     #names(resmat) <- c("id","total.time","gaps","time.nogaps","time.below","time.in","time.above","tir","tir.below","tir.above","auc.below","auc.above","auc2.below","auc2.above")
+    #allttr <- round(sum(resmat$time.in,na.rm=T)/sum(resmat$time.nogaps,na.rm=T),3)
+    #numsub <- sum(!is.na(resmat$tir))
+    #alltime <- sum(resmat$time.nogaps,na.rm=T)
     #return(resmat)
 
 #    return(list(total.time=total.time,
@@ -291,6 +303,7 @@ inr.list$day <- as.numeric(as.character(str_trim(inr.list$day)))
 inr.list$inr <- as.numeric(as.character(str_trim(inr.list$inr)))
 lowrange <- as.numeric(as.character(str_trim(lowrange)))
 highrange <- as.numeric(as.character(str_trim(highrange)))
+#Shebang
 result <- calc.tir (inr.list, lowrange, highrange)
 msg <- paste("<div>Time in therapeutic range: ", sprintf("%.1f",100*result$tir), "%</div>", sep="")
 msg <- paste(msg,"<div>Total number of days without gaps: ", sprintf("%.1f",result$total.time.nogaps), "</div>", sep="")
