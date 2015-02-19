@@ -190,8 +190,9 @@ calc.tir <- function(inr.list,lowrange=2.0,highrange=3.0)
     numsub <- length(idlist)
     resmat <- matrix(NA,numsub,14)
     
-	total.time.in = 0 		#Bob: initialized variables to collect cumulative data across patients 03-19-2014
-	total.time.nogaps = 0
+	total.time.in.allpts = 0 		#Bob: initialized variables to collect cumulative data across patients 03-19-2014
+	total.time.nogaps.allpts = 0
+	total.time.allpts = 0
 
     for (i in 1:numsub)
     {
@@ -232,12 +233,13 @@ calc.tir <- function(inr.list,lowrange=2.0,highrange=3.0)
         resmat[i,] <- c(idlist[i],total.time,temp.gap,time.nogaps,temp.below,temp.in,temp.above,round(temp.in/time.nogaps,3),
                          round(temp.below/time.nogaps,3),round(temp.above/time.nogaps,3),auc.below=temp.aucb,temp.auca,
                          temp.auc2b,temp.auc2a)
-		total.time.in = total.time.in + temp.in				#Bob added to increment variables to collect cumulative data across patients 03-19-2014
-		total.time.nogaps = total.time.nogaps + time.nogaps
+		total.time.in.allpts = total.time.in.allpts + temp.in				#Bob added to increment variables to collect cumulative data across patients 03-19-2014
+		total.time.nogaps.allpts = total.time.nogaps.allpts + time.nogaps
+		total.time.allpts = total.time.allpts + total.time
     }
     
 	#Return the totals of the variables that collected cumulative data across patients 03-19-2014
-	return(list(tir=round(total.time.in / total.time.nogaps,3),total.time.nogaps = total.time.nogaps, number.subjects = numsub))
+	return(list(tir=round(total.time.in.allpts / total.time.nogaps.allpts,3),total.time.nogaps.allpts = total.time.nogaps.allpts, total.time.allpts = total.time.allpts, gaps.fraction = round(1 - (total.time.nogaps.allpts / total.time.allpts),3), number.subjects = numsub))
     #resmat <- data.frame(resmat)
     #names(resmat) <- c("id","total.time","gaps","time.nogaps","time.below","time.in","time.above","tir","tir.below","tir.above","auc.below","auc.above","auc2.below","auc2.above")
     #allttr <- round(sum(resmat$time.in,na.rm=T)/sum(resmat$time.nogaps,na.rm=T),3)
@@ -306,7 +308,7 @@ highrange <- as.numeric(as.character(str_trim(highrange)))
 #Shebang
 result <- calc.tir (inr.list, lowrange, highrange)
 msg <- paste("<div>Time in therapeutic range: ", sprintf("%.1f",100*result$tir), "%</div>", sep="")
-msg <- paste(msg,"<div>Total number of days without gaps: ", sprintf("%.1f",result$total.time.nogaps), "</div>", sep="")
+msg <- paste(msg,"<div>Total number of days without gaps: ", sprintf("%.1f",result$total.time.nogaps.allpts), ". Total time: ", sprintf("%.1f",result$total.time.allpts), ". Gaps fraction: ", sprintf("%.1f",100*result$gaps.fraction), "%</div>", sep="")
 msg <- paste(msg,"<div>Total number of subjects: ", result$number.subjects, "</div>", sep="")
 
 list(message = msg)
