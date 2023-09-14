@@ -5,7 +5,7 @@ Time in therapeutic range.
 -----------------------------------------------------
 ### Contents:
 
-#### Calculation of time in therapeutic range. You may use this [application at OpenCPU](https://public.opencpu.org/ocpu/github/anticoagulation/warfarin/www/)
+#### Calculation of time in therapeutic range. URL https://cloud.opencpu.org/ocpu/apps/anticoagulation/warfarin/www/
 
 Importance:
 
