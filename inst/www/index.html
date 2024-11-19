@@ -5,23 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-<script src="https://code.jquery.com/jquery-3.7.1.js" integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
+
+<!--
+Information on js libraries calls
+https://www.opencpu.org/jslib.html
+https://cdn.opencpu.org/
+Need replacement functions for jquery.csv.js as no longer exists
+-->
+
+<script
+  src="https://code.jquery.com/jquery-3.7.1.min.js"
+  integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
+  crossorigin="anonymous"></script>
+  
+<-- https://d3js.org/ for data and csv -->
+<script src="https://ajax.googleapis.com/ajax/libs/d3js/7.9.0/d3.min.js"></script>
+
+<!-- some optional styling stuff 
+jQuery UI 1.14 is current as of 2024-11-19
+-->
+
+<script src="bootstrap/js/bootstrap.js"> </script>
+<script
+  src="https://code.jquery.com/ui/1.14.1/jquery-ui.min.js"
+  integrity="sha256-AlTido85uXPlSyyaZNsjJXeCs07eSv3r43kyCVc8ChI="
+  crossorigin="anonymous"></script>
+  
+<!-- Ajax.org Cloud9 Editor -->
+<script src="/ace-builds/src-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script>
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.session.setMode("ace/mode/javascript");
+</script>
 
 <!-- ocpu library -->
-<script src="opencpu/opencpu.js"> </script>
-
-<!-- some optional styling stuff -->
-<script src="bootstrap/js/bootstrap.js"> </script>
-<script src="jqueryui/jquery-ui-1.10.3.custom.js"> </script>
-
-<!-- jquery-csv from http://code.google.com/p/jquery-csv/ -->
-<script src="https://jquery-csv.googlecode.com/git/src/jquery.csv.js"></script>
-
-<!-- http://jqueryui.com/dialog/ -->
-<script src="https://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-
-<!-- Ajax.org Cloud9 Editor from http://ace.c9.io/#nav=api&api=editor -->
-<script src="src-min-noconflict/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="//cdn.opencpu.org/opencpu-0.4.js"></script>
 
 <!-- http://www.w3schools.com/jsref/jsref_obj_regexp.asp -->
 
